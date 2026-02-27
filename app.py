@@ -3,19 +3,28 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
-from pandas_datareader.data import DataReader
 
 st.set_page_config(page_title="Mortgage Spread Dashboard", layout="wide")
 
 # ----------------------------
 # Helpers
 # ----------------------------
-def fred(series_id: str, start: str) -> pd.Series:
-    api_key = os.getenv("FRED_API_KEY")
-    if not api_key:
-        st.error("Missing FRED_API_KEY. Add it in Streamlit Cloud → App settings → Secrets.")
-        st.stop()
-    s = DataReader(series_id, "fred", start=start, api_key=api_key)[series_id]
+import requests
+
+@st.cache_data(ttl=3600)
+def fred_csv(series_id: str) -> pd.Series:
+    # FRED provides a direct CSV download for each series:
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    r = requests.get(url, timeout=30)
+    r.raise_for_status()
+
+    from io import StringIO
+    df = pd.read_csv(StringIO(r.text))
+    # CSV columns: DATE, <SERIES_ID>
+    df["DATE"] = pd.to_datetime(df["DATE"])
+    df = df.set_index("DATE")
+
+    s = df[series_id].replace(".", np.nan).astype(float)
     s.name = series_id
     return s
 
