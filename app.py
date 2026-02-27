@@ -10,24 +10,36 @@ st.set_page_config(page_title="Mortgage Spread Dashboard", layout="wide")
 # Helpers
 # ----------------------------
 import requests
+from io import StringIO
 
 @st.cache_data(ttl=3600)
 def fred_csv(series_id: str) -> pd.Series:
-    # FRED provides a direct CSV download for each series:
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    r = requests.get(url, timeout=30)
+    r = requests.get(
+        url,
+        timeout=30,
+        headers={"User-Agent": "Mozilla/5.0"}  # helps avoid occasional non-CSV responses
+    )
     r.raise_for_status()
 
-    from io import StringIO
     df = pd.read_csv(StringIO(r.text))
-    # CSV columns: DATE, <SERIES_ID>
-    df["DATE"] = pd.to_datetime(df["DATE"])
-    df = df.set_index("DATE")
 
-    s = df[series_id].replace(".", np.nan).astype(float)
+    # Clean column names (handles BOM/whitespace)
+    df.columns = [str(c).strip().lstrip("\ufeff") for c in df.columns]
+
+    # FRED *should* return DATE, but fall back safely if it doesn’t
+    date_col = "DATE" if "DATE" in df.columns else df.columns[0]
+
+    # Value column should be the series_id, but fall back safely
+    val_col = series_id if series_id in df.columns else df.columns[1]
+
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+    df = df.dropna(subset=[date_col]).set_index(date_col)
+
+    s = pd.to_numeric(df[val_col].replace(".", np.nan), errors="coerce")
     s.name = series_id
     return s
-
+    
 def percentile_rank(series: pd.Series, value: float) -> float:
     s = series.dropna().values
     if len(s) == 0:
