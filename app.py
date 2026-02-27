@@ -64,9 +64,9 @@ with st.sidebar:
 # MORTGAGE30US = 30-Year Fixed Rate Mortgage Average in the United States (weekly, %)
 # DGS10        = 10-Year Treasury Constant Maturity Rate (daily, %)
 # USREC        = NBER based Recession Indicators for the United States from the Peak through the Trough (monthly, 0/1)
-mort = fred("MORTGAGE30US", start_date)
-dgs10 = fred("DGS10", start_date)
-usrec = fred("USREC", start_date)
+mort = fred_csv("MORTGAGE30US")
+dgs10 = fred_csv("DGS10")
+usrec = fred_csv("USREC")
 
 df = pd.concat([mort, dgs10, usrec], axis=1).sort_index()
 df.columns = ["Mortgage30Y", "Treasury10Y", "USREC"]
