@@ -131,6 +131,7 @@ st.caption("Data source: FRED series MORTGAGE30US, DGS10, USREC. Spread in perce
 # ----------------------------
 fig = plt.figure()
 ax = plt.gca()
+ax.set_xlim(pd.Timestamp("2000-01-01"), df.index.max())
 
 # Recession shading (USREC == 1)
 # We find contiguous recession intervals and shade them.
@@ -155,7 +156,6 @@ if show_roll:
     ax.plot(df.index, df["Spread_Roll"], label=f"Rolling avg (~{roll_weeks} weeks)")
 
 ax.axhline(mean_spread, linestyle="--", linewidth=1, label="Historical mean")
-ax.axhline(median_spread, linestyle=":", linewidth=1, label="Historical median")
 
 ax.set_title("Mortgage Spread with NBER Recession Shading")
 ax.set_xlabel("Date")
@@ -177,7 +177,6 @@ with colA:
     st.write("**Summary stats (since start date)**")
     stats = pd.Series({
         "Mean (pp)": mean_spread,
-        "Median (pp)": median_spread,
         "Min (pp)": hist.min() if len(hist) else np.nan,
         "Max (pp)": hist.max() if len(hist) else np.nan,
         "Std dev (pp)": hist.std(ddof=0) if len(hist) else np.nan,
