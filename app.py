@@ -15,22 +15,22 @@ from io import StringIO
 @st.cache_data(ttl=3600)
 def fred_csv(series_id: str) -> pd.Series:
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    r = requests.get(
-        url,
-        timeout=30,
-        headers={"User-Agent": "Mozilla/5.0"}  # helps avoid occasional non-CSV responses
-    )
-    r.raise_for_status()
+
+    try:
+        r = requests.get(
+            url,
+            timeout=10,   # shorter timeout
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        r.raise_for_status()
+    except Exception as e:
+        st.error(f"Failed to download {series_id} from FRED: {e}")
+        st.stop()
 
     df = pd.read_csv(StringIO(r.text))
-
-    # Clean column names (handles BOM/whitespace)
     df.columns = [str(c).strip().lstrip("\ufeff") for c in df.columns]
 
-    # FRED *should* return DATE, but fall back safely if it doesn’t
     date_col = "DATE" if "DATE" in df.columns else df.columns[0]
-
-    # Value column should be the series_id, but fall back safely
     val_col = series_id if series_id in df.columns else df.columns[1]
 
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
