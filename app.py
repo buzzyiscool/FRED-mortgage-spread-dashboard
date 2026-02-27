@@ -72,6 +72,7 @@ with st.sidebar:
 # ----------------------------
 # Data
 # ----------------------------
+st.write("Loading data from FRED...")
 # FRED series IDs:
 # MORTGAGE30US = 30-Year Fixed Rate Mortgage Average in the United States (weekly, %)
 # DGS10        = 10-Year Treasury Constant Maturity Rate (daily, %)
