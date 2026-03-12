@@ -19,7 +19,7 @@ def fred_csv(series_id: str) -> pd.Series:
     try:
         r = requests.get(
             url,
-            timeout=10,   # shorter timeout
+            timeout=60,   # shorter timeout
             headers={"User-Agent": "Mozilla/5.0"}
         )
         r.raise_for_status()
